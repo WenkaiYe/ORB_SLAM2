@@ -28,16 +28,30 @@ endif()
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
-find_package(OpenCV 3.0 QUIET)
-if(NOT OpenCV_FOUND)
-   find_package(OpenCV 2.4.3 QUIET)
-   if(NOT OpenCV_FOUND)
-      message(FATAL_ERROR "OpenCV > 2.4.3 not found.")
-   endif()
+# customize opencv dir
+if ($ENV{ROS_DISTRO} STREQUAL "indigo")
+    set( OpenCV_DIR /opt/opencv2/share/OpenCV )
+    find_package(OpenCV 2.4.13 REQUIRED core ocl)
+elseif ($ENV{ROS_DISTRO} STREQUAL "kinetic")
+     set( OpenCV_DIR /opt/opencv-3.4.1/share/OpenCV )
+     set( OpenCV_DIR /opt/opencv3/share/OpenCV )
+     find_package(OpenCV 3.4.0 REQUIRED)
 endif()
+#set( OpenCV_DIR /opt/opencv3/share/OpenCV )
+#find_package(OpenCV 3.4.0 REQUIRED)
+    
+# customize eigen dir
+# find_package(Eigen3 3.1.0 REQUIRED)
+set( EIGEN3_INCLUDE_DIR /usr/include/eigen3 )
+MESSAGE("EIGEN include dir: " ${EIGEN3_INCLUDE_DIR})
+# MESSAGE("EIGEN libs: " ${EIGEN3_LIBS})
 
-find_package(Eigen3 3.1.0 REQUIRED)
-find_package(Pangolin REQUIRED)
+# customize pangolin dir
+# set(Pangolin_DIR /opt/Pangolin/lib/cmake/Pangolin/)
+# find_package(Pangolin REQUIRED)
+set(Pangolin_INCLUDE_DIRS /opt/Pangolin/include/)
+set(Pangolin_LIBRARIES /opt/Pangolin/lib/libpangolin.so)
+MESSAGE("Pangolin include dir: " ${Pangolin_INCLUDE_DIRS})
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
@@ -80,34 +94,39 @@ ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
 
 # Build examples
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/RGB-D)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/tools)
+add_executable(bin_vocabulary
+tools/bin_vocabulary.cc)
+target_link_libraries(bin_vocabulary ${PROJECT_NAME})
 
-add_executable(rgbd_tum
-Examples/RGB-D/rgbd_tum.cc)
-target_link_libraries(rgbd_tum ${PROJECT_NAME})
+# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/RGB-D)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)
+# add_executable(rgbd_tum
+# Examples/RGB-D/rgbd_tum.cc)
+# target_link_libraries(rgbd_tum ${PROJECT_NAME})
 
-add_executable(stereo_kitti
-Examples/Stereo/stereo_kitti.cc)
-target_link_libraries(stereo_kitti ${PROJECT_NAME})
+# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)
 
-add_executable(stereo_euroc
-Examples/Stereo/stereo_euroc.cc)
-target_link_libraries(stereo_euroc ${PROJECT_NAME})
+# add_executable(stereo_kitti
+# Examples/Stereo/stereo_kitti.cc)
+# target_link_libraries(stereo_kitti ${PROJECT_NAME})
+
+# add_executable(stereo_euroc
+# Examples/Stereo/stereo_euroc.cc)
+# target_link_libraries(stereo_euroc ${PROJECT_NAME})
 
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Monocular)
+# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Monocular)
 
-add_executable(mono_tum
-Examples/Monocular/mono_tum.cc)
-target_link_libraries(mono_tum ${PROJECT_NAME})
+# add_executable(mono_tum
+# Examples/Monocular/mono_tum.cc)
+# target_link_libraries(mono_tum ${PROJECT_NAME})
 
-add_executable(mono_kitti
-Examples/Monocular/mono_kitti.cc)
-target_link_libraries(mono_kitti ${PROJECT_NAME})
+# add_executable(mono_kitti
+# Examples/Monocular/mono_kitti.cc)
+# target_link_libraries(mono_kitti ${PROJECT_NAME})
 
-add_executable(mono_euroc
-Examples/Monocular/mono_euroc.cc)
-target_link_libraries(mono_euroc ${PROJECT_NAME})
+# add_executable(mono_euroc
+# Examples/Monocular/mono_euroc.cc)
+# target_link_libraries(mono_euroc ${PROJECT_NAME})
 
