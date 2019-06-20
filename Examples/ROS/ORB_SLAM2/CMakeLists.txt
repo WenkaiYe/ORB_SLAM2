@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 rosbuild_init()
 
-IF(NOT ROS_BUILD_TYPE)
+# IF(NOT ROS_BUILD_TYPE)
   SET(ROS_BUILD_TYPE Release)
-ENDIF()
+# ENDIF()
 
 MESSAGE("Build type: " ${ROS_BUILD_TYPE})
 
@@ -30,31 +30,49 @@ endif()
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../../cmake_modules)
 
-find_package(OpenCV 3.0 QUIET)
-if(NOT OpenCV_FOUND)
-   find_package(OpenCV 2.4.3 QUIET)
-   if(NOT OpenCV_FOUND)
-      message(FATAL_ERROR "OpenCV > 2.4.3 not found.")
-   endif()
-endif()
+# customize opencv dir
+ if ($ENV{ROS_DISTRO} STREQUAL "indigo")
+     set( OpenCV_DIR /opt/opencv2/share/OpenCV )
+     find_package(OpenCV 2.4.13 REQUIRED core ocl)
+ elseif ($ENV{ROS_DISTRO} STREQUAL "kinetic")
+     set( OpenCV_DIR /opt/opencv-3.4.1/share/OpenCV )
+     set( OpenCV_DIR /opt/opencv3/share/OpenCV )
+     find_package(OpenCV 3.4.0 REQUIRED)
+ endif()
 
-find_package(Eigen3 3.1.0 REQUIRED)
-find_package(Pangolin REQUIRED)
+# find_package(Eigen3 3.1.0 REQUIRED)
+set( EIGEN3_INCLUDE_DIR /usr/include/eigen3 )
+MESSAGE("EIGEN include dir: " ${EIGEN3_INCLUDE_DIR})
+
+# set( Pangolin_DIR /opt/Pangolin/lib/cmake/Pangolin/ )
+# find_package(Pangolin REQUIRED)
+set(Pangolin_INCLUDE_DIRS /opt/Pangolin/include/)
+set(Pangolin_LIBRARIES /opt/Pangolin/lib/libpangolin.so)
+MESSAGE("Pangolin include dir: " ${Pangolin_INCLUDE_DIRS})
+
+find_package(Boost COMPONENTS system)
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/../../../
 ${PROJECT_SOURCE_DIR}/../../../include
 ${Pangolin_INCLUDE_DIRS}
+${EIGEN3_INCLUDE_DIR}
+${Boost_INCLUDE_DIRS}
 )
 
 set(LIBS 
+	GL  
+    GLU
+    GLEW
+    glut
 ${OpenCV_LIBS} 
 ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
 ${PROJECT_SOURCE_DIR}/../../../Thirdparty/DBoW2/lib/libDBoW2.so
 ${PROJECT_SOURCE_DIR}/../../../Thirdparty/g2o/lib/libg2o.so
 ${PROJECT_SOURCE_DIR}/../../../lib/libORB_SLAM2.so
+${Boost_LIBRARIES}
 )
 
 # Node for monocular camera
