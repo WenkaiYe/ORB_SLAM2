@@ -49,15 +49,15 @@ for ri, num_gf in enumerate(Number_GF_List):
 
             File_Setting = config_path + '/NewCollege_yaml/Bumblebee_stereo_lmk800.yaml'
 
-            # File_Vocab = config_path + '/ORBvoc.txt'
-            File_Vocab = config_path + '/ORBvoc.bin'
+            File_Vocab = config_path + '/ORBvoc.txt'
+            # File_Vocab = config_path + '/ORBvoc.bin'
             # File_rosbag  = '/mnt/DATA/Datasets/New_College/BagFiles/' + SeqName + '.bag'
             # File_rosbag  = '/media/wye/DATA/NewCollege2009/' + SeqName + '.bag'
             File_rosbag  = '/home/wye/Documents/Data/NewCollege2009/' + SeqName + '.bag'
             File_traj = Experiment_dir + '/' + SeqName
             File_log = Experiment_dir + '/' + 'verbose_details.log'
             # do viz
-            cmd_slam   = str('rosrun GF_ORB_SLAM2 Stereo ' + File_Vocab + ' ' + File_Setting + ' ' + str(int(num_gf*2.)) + ' false true /cam0/image_raw /cam1/image_raw ' + File_traj + ' >> ' + File_log)
+            cmd_slam   = str('rosrun ORB_SLAM2 Stereo ' + File_Vocab + ' ' + File_Setting + ' ' + str(int(num_gf)) + ' false true /cam0/image_raw /cam1/image_raw ' + File_traj + ' >> ' + File_log)
             # no viz
             # cmd_slam   = str('rosrun GF_ORB_SLAM2 Stereo ' + File_Vocab + ' ' + File_Setting + ' ' + str(int(num_gf)) + ' false false /cam0/image_raw /cam1/image_raw ' + File_traj)
             cmd_rosbag = 'rosbag play ' + File_rosbag #+ ' -s 900' # + ' -r 0.3' # + ' -u 20' 

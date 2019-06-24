@@ -50,22 +50,34 @@ public:
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "RGBD");
+    ros::init(argc, argv, "Stereo");
     ros::start();
 
-    if(argc != 4)
+    if(argc != 9)
     {
-        cerr << endl << "Usage: rosrun ORB_SLAM2 Stereo path_to_vocabulary path_to_settings do_rectify" << endl;
+        cerr << endl << "Usage: rosrun ORB_SLAM2 Stereo path_to_vocabulary path_to_settings budget_per_frame "
+             << " do_rectify do_viz "
+             << " topic_img_l topic_img_r path_to_traj" << endl;
         ros::shutdown();
         return 1;
     }    
 
+    bool do_viz;
+    stringstream s1(argv[5]);
+    s1 >> boolalpha >> do_viz;
+
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO,true);
+    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO,do_viz);
+
+    SLAM.SetBudgetPerFrame(std::atoi(argv[3]));
+
+    std::string fNameRealTimeTrack = std::string(argv[8]) + "_AllFrameTrajectory.txt";
+    std::cout << std::endl << "Saving AllFrame Trajectory to AllFrameTrajectory.txt" << std::endl;
+    SLAM.SetRealTimeFileStream(fNameRealTimeTrack);
 
     ImageGrabber igb(&SLAM);
 
-    stringstream ss(argv[3]);
+    stringstream ss(argv[4]);
 	ss >> boolalpha >> igb.do_rectify;
 
     if(igb.do_rectify)
@@ -105,27 +117,38 @@ int main(int argc, char **argv)
 
         cv::initUndistortRectifyMap(K_l,D_l,R_l,P_l.rowRange(0,3).colRange(0,3),cv::Size(cols_l,rows_l),CV_32F,igb.M1l,igb.M2l);
         cv::initUndistortRectifyMap(K_r,D_r,R_r,P_r.rowRange(0,3).colRange(0,3),cv::Size(cols_r,rows_r),CV_32F,igb.M1r,igb.M2r);
+        cout << "finish creating rad-tan rectification map!" << endl;
     }
 
     ros::NodeHandle nh;
 
-    message_filters::Subscriber<sensor_msgs::Image> left_sub(nh, "/cam0/image_raw", 1);
-    message_filters::Subscriber<sensor_msgs::Image> right_sub(nh, "/cam1/image_raw", 1);
+    message_filters::Subscriber<sensor_msgs::Image> left_sub(nh, argv[6], 1);
+    message_filters::Subscriber<sensor_msgs::Image> right_sub(nh, argv[7], 1);
     typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> sync_pol;
     message_filters::Synchronizer<sync_pol> sync(sync_pol(10), left_sub,right_sub);
     sync.registerCallback(boost::bind(&ImageGrabber::GrabStereo,&igb,_1,_2));
 
-    ros::spin();
+    while(ros::ok())
+        ros::spin();
+
+    cout << "ros_stereo: done with spin!" << endl;
 
     // Stop all threads
-    SLAM.Shutdown();
 
     // Save camera trajectory
-    SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory_TUM_Format.txt");
-    SLAM.SaveTrajectoryTUM("FrameTrajectory_TUM_Format.txt");
-    SLAM.SaveTrajectoryKITTI("FrameTrajectory_KITTI_Format.txt");
+    // SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory_TUM_Format.txt");
+    // SLAM.SaveTrajectoryTUM("FrameTrajectory_TUM_Format.txt");
+    // SLAM.SaveTrajectoryKITTI("FrameTrajectory_KITTI_Format.txt");
+    SLAM.SaveKeyFrameTrajectoryTUM( std::string(argv[8]) + "_KeyFrameTrajectory.txt" );
+    SLAM.SaveLog(std::string(argv[8]) + "_Log.txt" );
+
+    std::cout << "Finished saving!" << std::endl;
 
     ros::shutdown();
+    cout << "ros_stereo: done with ros Shutdown!" << endl;
+
+    SLAM.Shutdown();
+    cout << "ros_stereo: done with SLAM Shutdown!" << endl;
 
     return 0;
 }
@@ -166,7 +189,6 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const se
     {
         mpSLAM->TrackStereo(cv_ptrLeft->image,cv_ptrRight->image,cv_ptrLeft->header.stamp.toSec());
     }
-
 }
 
 

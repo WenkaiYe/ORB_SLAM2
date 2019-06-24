@@ -38,6 +38,8 @@
 #include "MapDrawer.h"
 #include "System.h"
 
+#include "Util.hpp"
+
 #include <mutex>
 
 namespace ORB_SLAM2
@@ -74,6 +76,11 @@ public:
     // Use this function if you have deactivated local mapping and you only want to localize the camera.
     void InformOnlyTracking(const bool &flag);
 
+    ~Tracking();
+
+    void SetRealTimeFileStream(string fNameRealTimeTrack);
+
+    void updateORBExtractor();
 
 public:
 
@@ -110,8 +117,14 @@ public:
     list<double> mlFrameTimes;
     list<bool> mlbLost;
 
+    // Time log
+    vector<TimeLog> mFrameTimeLog;
+    TimeLog logCurrentFrame;
+
     // True if local mapping is deactivated and we are performing only localization
     bool mbOnlyTracking;
+
+    size_t num_good_constr_predef;
 
     void Reset();
 
@@ -214,6 +227,8 @@ protected:
     bool mbRGB;
 
     list<MapPoint*> mlpTemporalPoints;
+
+    std::ofstream f_realTimeTrack;
 };
 
 } //namespace ORB_SLAM

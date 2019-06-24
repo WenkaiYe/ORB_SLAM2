@@ -18,8 +18,6 @@
 * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-
 #include "System.h"
 #include "Converter.h"
 #include <thread>
@@ -56,7 +54,6 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
        cerr << "Failed to open settings file at: " << strSettingsFile << endl;
        exit(-1);
     }
-
 
     //Load ORB Vocabulary
     cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
@@ -215,6 +212,62 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const doub
     return Tcw;
 }
 
+void System::SaveLog(const string &filename) {
+
+    cout << endl << "Saving running log to " << filename << " ..." << endl;
+
+    ofstream fFrameTimeLog;
+    fFrameTimeLog.open(filename.c_str());
+    fFrameTimeLog << fixed;
+    fFrameTimeLog << "#frame_time_stamp time_ORB_extraction time_track_motion time_track_frame time_track_map time_match ..." << std::endl;
+    for(size_t i=0; i<mpTracker->mFrameTimeLog.size(); i++)
+    {
+
+        fFrameTimeLog << setprecision(6)
+                      << mpTracker->mFrameTimeLog[i].frame_time_stamp << " "
+                      << mpTracker->mFrameTimeLog[i].time_rectification + mpTracker->mFrameTimeLog[i].time_ORB_extraction << " "
+                      << mpTracker->mFrameTimeLog[i].time_track_motion << " "
+                      << mpTracker->mFrameTimeLog[i].time_track_frame << " "
+                      << mpTracker->mFrameTimeLog[i].time_track_map << " "
+                      << mpTracker->mFrameTimeLog[i].time_match //<< " "
+//                      << mpTracker->mFrameTimeLog[i].time_select << " "
+//                      << mpTracker->mFrameTimeLog[i].time_optim << " "
+//                      << mpTracker->mFrameTimeLog[i].time_stereo_motion << " "
+//                      << mpTracker->mFrameTimeLog[i].time_stereo_frame << " "
+//                      << mpTracker->mFrameTimeLog[i].time_stereo_map << " "
+//                      << mpTracker->mFrameTimeLog[i].time_stereo_post << " "
+//                      << mpTracker->mFrameTimeLog[i].time_post_proc << " "
+//                      << mpTracker->mFrameTimeLog[i].time_mat_online << " "
+//                      << mpTracker->mFrameTimeLog[i].time_hash_insert << " "
+//                      << mpTracker->mFrameTimeLog[i].time_hash_query << " "
+//                      << setprecision(0)
+//                      << mpTracker->mFrameTimeLog[i].lmk_num_motion << " "
+//                      << mpTracker->mFrameTimeLog[i].lmk_num_frame << " "
+//                      << mpTracker->mFrameTimeLog[i].lmk_num_map << " "
+//                      << mpTracker->mFrameTimeLog[i].lmk_num_LocalMPs << " "
+//                      << mpTracker->mFrameTimeLog[i].lmk_num_BA << " "
+//                      << mpTracker->mFrameTimeLog[i].lmk_hash_dynamics
+                      << std::endl;
+    }
+    fFrameTimeLog.close();
+
+}
+
+void System::SetBudgetPerFrame(const size_t budget_per_frame)
+{
+    mpTracker->num_good_constr_predef = budget_per_frame;
+    // baseline only
+    // re-create orb extractor with the defined budget per frame
+    mpTracker->updateORBExtractor();
+    std::cout << "mpTracker budget adjusted to " << mpTracker->num_good_constr_predef << std::endl;
+}
+
+void System::SetRealTimeFileStream(const string &filename)
+{
+    mpTracker->SetRealTimeFileStream(filename);
+    std::cout << "mpTracker real time output to " << filename << std::endl;
+}
+
 cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)
 {
     if(mSensor!=MONOCULAR)
@@ -315,8 +368,10 @@ void System::Shutdown()
         usleep(5000);
     }
 
-    if(mpViewer)
-        pangolin::BindToContext("ORB-SLAM2: Map Viewer");
+//    if(mpViewer)
+//        pangolin::BindToContext("ORB-SLAM2: Map Viewer");
+
+    cout << "At the end of system Shutdown!" << endl;
 }
 
 void System::SaveTrajectoryTUM(const string &filename)
