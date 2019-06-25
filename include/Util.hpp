@@ -24,6 +24,7 @@
 
 typedef std::chrono::high_resolution_clock Clock;
 typedef std::chrono::milliseconds milliseconds;
+typedef std::chrono::microseconds microseconds;
 
 namespace ORB_SLAM2 {
 
@@ -40,12 +41,13 @@ public:
     double toc()
     {
         Clock::time_point t1 = Clock::now();
-        milliseconds ms = std::chrono::duration_cast<milliseconds>(t1 - t0);
-        return static_cast<double>(ms.count());
+        microseconds ms = std::chrono::duration_cast<microseconds>(t1 - t0);
+        return static_cast<double>(ms.count()) / 1000000.; //unit: sec
     }
 
 private:
     Clock::time_point t0 = Clock::now();
+
 };
 ////-------------------------------
 //class SimplePoint {

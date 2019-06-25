@@ -40,6 +40,9 @@
 
 #include "Util.hpp"
 
+
+#define THRES_INIT_TRACKING 100
+
 #include <mutex>
 
 namespace ORB_SLAM2
