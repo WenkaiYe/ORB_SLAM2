@@ -13,7 +13,7 @@ SeqNameList = ['MH_03_medium', 'V2_02_medium', 'V2_03_difficult', 'not_exist'];
 # Result_root = '/mnt/DATA/tmp/EuRoC/Lmk_800/ORB2_active_measErr_withFrameInfo/'
 Result_root = '/home/wye/rosbuild_ws/package_dir/Results/EuRoC_Baseline/'
 
-Number_GF_List = [1600]; # [400, 600, 800, 1000, 1500, 2000]; # 
+Number_GF_List = [800]; # [400, 600, 800, 1000, 1500, 2000]; # 
 # Number_GF_List = [60, 80, 100, 150, 200];
 Num_Repeating = 1 # 10 # 20 #  5 # 
 SleepTime = 1 # 10 # 25
@@ -62,7 +62,7 @@ for ri, num_gf in enumerate(Number_GF_List):
             File_traj = Experiment_dir + '/' + SeqName
 
             # do viz
-            cmd_slam   = str('rosrun ORB_SLAM2 Stereo ' + File_Vocab + ' ' + File_Setting + ' ' + str(int(num_gf)) + ' false true /cam0/image_raw /cam1/image_raw ' + File_traj)
+            cmd_slam   = str('rosrun ORB_SLAM2 Stereo ' + File_Vocab + ' ' + File_Setting + ' ' + str(int(num_gf)) + ' true true /cam0/image_raw /cam1/image_raw ' + File_traj)
             # no viz
             # cmd_slam   = str('rosrun GF_ORB_SLAM2 Stereo ' + File_Vocab + ' ' + File_Setting + ' ' + str(int(num_gf)) + ' false false /cam0/image_raw /cam1/image_raw ' + File_traj)
             cmd_rosbag = 'rosbag play ' + File_rosbag # + ' -r 0.3' # + ' -u 20' 

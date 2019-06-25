@@ -49,8 +49,8 @@ for ri, num_gf in enumerate(Number_GF_List):
 
             File_Setting = config_path + '/NewCollege_yaml/Bumblebee_stereo_lmk800.yaml'
 
-            File_Vocab = config_path + '/ORBvoc.txt'
-            # File_Vocab = config_path + '/ORBvoc.bin'
+            # File_Vocab = config_path + '/ORBvoc.txt'
+            File_Vocab = config_path + '/ORBvoc.bin'
             # File_rosbag  = '/mnt/DATA/Datasets/New_College/BagFiles/' + SeqName + '.bag'
             # File_rosbag  = '/media/wye/DATA/NewCollege2009/' + SeqName + '.bag'
             File_rosbag  = '/home/wye/Documents/Data/NewCollege2009/' + SeqName + '.bag'
