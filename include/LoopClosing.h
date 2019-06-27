@@ -33,6 +33,8 @@
 #include <mutex>
 #include "Thirdparty/g2o/g2o/types/types_seven_dof_expmap.h"
 
+#define LOOPCLOSURE_TEMPORAL_CONSTRAINT 60
+
 namespace ORB_SLAM2
 {
 
@@ -136,12 +138,15 @@ protected:
     bool mbRunningGBA;
     bool mbFinishedGBA;
     bool mbStopGBA;
+    bool mbStopOnce;
     std::mutex mMutexGBA;
     std::thread* mpThreadGBA;
 
     // Fix scale in the stereo/RGB-D case
     bool mbFixScale;
+    bool mbFinalGBA;
 
+    unsigned int mnPreDetectedLoop;
 
     bool mnFullBAIdx;
 };

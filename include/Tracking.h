@@ -129,6 +129,8 @@ public:
 
     size_t num_good_constr_predef;
 
+    double camera_fps;
+
     void Reset();
 
 protected:

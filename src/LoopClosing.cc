@@ -38,7 +38,7 @@ namespace ORB_SLAM2
 LoopClosing::LoopClosing(Map *pMap, KeyFrameDatabase *pDB, ORBVocabulary *pVoc, const bool bFixScale):
     mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap),
     mpKeyFrameDB(pDB), mpORBVocabulary(pVoc), mpMatchedKF(NULL), mLastLoopKFid(0), mbRunningGBA(false), mbFinishedGBA(true),
-    mbStopGBA(false), mpThreadGBA(NULL), mbFixScale(bFixScale), mnFullBAIdx(0)
+    mbStopGBA(false), mpThreadGBA(NULL), mbFixScale(bFixScale), mnFullBAIdx(0), mnPreDetectedLoop(0), mbStopOnce(false), mbFinalGBA(false)
 {
     mnCovisibilityConsistencyTh = 3;
 }
@@ -60,26 +60,85 @@ void LoopClosing::Run()
 
     while(1)
     {
+
+#ifdef DISABLE_LOOP_CLOSURE
+        // do nothing
+
+#else
         // Check if there are keyframes in the queue
         if(CheckNewKeyFrames())
         {
+            //            if(mpTracker->logCurrentFrame.frame_time_stamp - mdPreviousTimeStamp > TEMPORAL_CONSTRAINT_TIME)
+            //            {
             // Detect loop candidates and check covisibility consistency
             if(DetectLoop())
             {
-               // Compute similarity transformation [sR|t]
-               // In the stereo/RGBD case s=1
-               if(ComputeSim3())
-               {
-                   // Perform loop fusion and pose graph optimization
-                   CorrectLoop();
-               }
+                // Compute similarity transformation [sR|t]
+                // In the stereo/RGBD case s=1
+                if(ComputeSim3())
+                {
+                    if(mpCurrentKF->mnFrameId - mnPreDetectedLoop > LOOPCLOSURE_TEMPORAL_CONSTRAINT * mpTracker->camera_fps)
+                    {
+                        cout << "Loop detected!" << endl;
+
+                        // If a Global Bundle Adjustment is running, abort it
+                        if(isRunningGBA())
+                        {
+
+                            //                        cout << "GBA is running!" << endl;
+
+                            if(!mbStopOnce)
+                            {
+                                unique_lock<mutex> lock(mMutexGBA);
+
+                                mbStopGBA = true;
+                                mnFullBAIdx++;
+
+                                //                            cout << "set stop sign to GBA once!" << endl;
+                                mbStopOnce = true;
+
+                                if(mpThreadGBA)
+                                {
+                                    mpThreadGBA->detach();
+                                    delete mpThreadGBA;
+                                }
+                            }
+                            //                        else
+                            //                            cout << "GBA is running & stop sign is already set!" << endl;
+
+                        }
+                        else
+                        {
+                            //                        cout << "reset stop sign and start to correct loop!" << endl;
+                            mnPreDetectedLoop = mpCurrentKF->mnFrameId;
+
+                            mbStopOnce = false;
+                            // Perform loop fusion and pose graph optimization
+                            CorrectLoop();
+
+                        }
+                    }
+                    //                        mdPreviousTimeStamp = mpTracker->logCurrentFrame.frame_time_stamp;
+                    //                        mpTracker->ResetInitNumFrame();
+                }
             }
-        }       
+            //            }
+        }
+
+#endif
 
         ResetIfRequested();
 
         if(CheckFinish())
+        {
+            mbFinalGBA = true;
+
+            // wait if undergoing GBA
+            while(!isRunningGBA())
+                usleep(5000);
+
             break;
+        }
 
         usleep(5000);
     }
@@ -401,26 +460,26 @@ bool LoopClosing::ComputeSim3()
 
 void LoopClosing::CorrectLoop()
 {
-    cout << "Loop detected!" << endl;
+//    cout << "Loop detected!" << endl;
 
     // Send a stop signal to Local Mapping
     // Avoid new keyframes are inserted while correcting the loop
     mpLocalMapper->RequestStop();
 
-    // If a Global Bundle Adjustment is running, abort it
-    if(isRunningGBA())
-    {
-        unique_lock<mutex> lock(mMutexGBA);
-        mbStopGBA = true;
+//    // If a Global Bundle Adjustment is running, abort it
+//    if(isRunningGBA())
+//    {
+//        unique_lock<mutex> lock(mMutexGBA);
+//        mbStopGBA = true;
 
-        mnFullBAIdx++;
+//        mnFullBAIdx++;
 
-        if(mpThreadGBA)
-        {
-            mpThreadGBA->detach();
-            delete mpThreadGBA;
-        }
-    }
+//        if(mpThreadGBA)
+//        {
+//            mpThreadGBA->detach();
+//            delete mpThreadGBA;
+//        }
+//    }
 
     // Wait until Local Mapping has effectively stopped
     while(!mpLocalMapper->isStopped())
@@ -656,9 +715,16 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF)
     {
         unique_lock<mutex> lock(mMutexGBA);
         if(idx!=mnFullBAIdx)
-            return;
+        {
+            //            cerr << idx << " != " << mnFullBAIdx << endl;
+            cerr << "Gloabl BA is aborted!..." <<endl;
+            mbFinishedGBA = true;
+            mbRunningGBA = false;
 
-        if(!mbStopGBA)
+            return;
+        }
+
+        if(!mbStopGBA || mbFinalGBA)
         {
             cout << "Global Bundle Adjustment finished" << endl;
             cout << "Updating map ..." << endl;
